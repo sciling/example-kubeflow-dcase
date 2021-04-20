@@ -1,0 +1,31 @@
+apiVersion: projectsame.io/v1alpha1
+metadata:
+    name: DCase
+    version: 0.0.0
+workflow:
+    type: kubeflow
+    parameters:
+        kubeflowVersion: 1.2
+        kubeflowNamespace: kubeflow # Only support Kubeflow namespace
+        credentialFile: porter-kfp
+pipeline:
+    name: "training"
+    description: "Anomalous sound detection (ASD) with Kubeflow Pipeline."
+    package: "src/pipeline.py"
+run:
+    name: "default"
+    parameters:
+        dataset_url: "https://zenodo.org/record/3678171/files/dev_data_fan.zip"
+        max_fpr: 0.1
+        feature_n_mels: 128
+        feature_frames: 5
+        feature_n_fft: 1024
+        feature_hop_length: 512
+        feature_power: 2.0
+        fit_compile_optimizer: "adam"
+        fit_compile_loss: "mean_squared_error"
+        fit_epochs: 2
+        fit_batch_size: 512
+        fit_shuffle: True
+        fit_validation_split: 0.1
+        fit_verbose: 1
