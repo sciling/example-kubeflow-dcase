@@ -20,11 +20,5 @@ repos:
     rev: v3.4.0
     hooks:
       - id: trailing-whitespace
-        exclude: |
-          (?x)(
-            ^tests/.*/fixtures/.*
-            | ^tests/console/commands/debug/test_resolve.py
-          )
       - id: end-of-file-fixer
-        exclude: ^tests/.*/fixtures/.*
       - id: debug-statements

@@ -1,15 +1,21 @@
-from unittest import TestCase
-import unittest
 import sys
-sys.path.append('..')
-import src.test as test
-import tempfile
+import unittest
+
+from unittest import TestCase
+
+
+sys.path.append("..")
 import os
 import pathlib
+import tempfile
+
+import src.test as test
 
 
 DATA_DIR = f"{pathlib.Path(__file__).parent.absolute()}/../data/test/minidataset/"
-MODEL_DIR = f"{pathlib.Path(__file__).parent.absolute()}/../data/test/minidataset_model/"
+MODEL_DIR = (
+    f"{pathlib.Path(__file__).parent.absolute()}/../data/test/minidataset_model/"
+)
 
 
 class TestTrain(TestCase):
@@ -27,11 +33,27 @@ class TestTrain(TestCase):
         metrics_file = tempfile.NamedTemporaryFile()
 
         # Test call
-        test.test(dataset_path=DATA_DIR, feature_frames=5, feature_hop_length=512, feature_n_fft=1024, feature_n_mels=128,
-                  feature_power=2.0, fit_batch_size=512, fit_compile_loss="mean_squared_error", fit_compile_optimizer="adam",
-                  fit_epochs=2, fit_shuffle=True, fit_validation_split=0.15, fit_verbose=1, max_fpr=0.1, models_dir=MODEL_DIR,
-                  anomaly_dir=anomaly_directory, results_dir=results_directory, mlpipelinemetrics_path=metrics_file.name,
-                  labels_dir=labels_directory)
+        test.test(
+            dataset_path=DATA_DIR,
+            feature_frames=5,
+            feature_hop_length=512,
+            feature_n_fft=1024,
+            feature_n_mels=128,
+            feature_power=2.0,
+            fit_batch_size=512,
+            fit_compile_loss="mean_squared_error",
+            fit_compile_optimizer="adam",
+            fit_epochs=2,
+            fit_shuffle=True,
+            fit_validation_split=0.15,
+            fit_verbose=1,
+            max_fpr=0.1,
+            models_dir=MODEL_DIR,
+            anomaly_dir=anomaly_directory,
+            results_dir=results_directory,
+            mlpipelinemetrics_path=metrics_file.name,
+            labels_dir=labels_directory,
+        )
 
         # Check the labels are correctly created in the directory
         self.assertIn("y_scores.txt", os.listdir(labels_directory))
@@ -47,5 +69,5 @@ class TestTrain(TestCase):
         metrics_file.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -1,22 +1,41 @@
-import kfp.components as comp
 import typing
 
+import kfp.components as comp
 
-def train(dataset_path: comp.InputPath(str), feature_frames,
-          feature_hop_length, feature_n_fft, feature_n_mels, feature_power, fit_batch_size, fit_compile_loss,
-          fit_compile_optimizer, fit_epochs, fit_shuffle, fit_validation_split, fit_verbose, max_fpr, lossplot_path: comp.OutputPath(str),
-          models_dir: comp.OutputPath()) -> typing.NamedTuple('loss_plot', [('mlpipeline_ui_metadata', 'UI_metadata')]):
+
+def train(
+    dataset_path: comp.InputPath(str),
+    feature_frames,
+    feature_hop_length,
+    feature_n_fft,
+    feature_n_mels,
+    feature_power,
+    fit_batch_size,
+    fit_compile_loss,
+    fit_compile_optimizer,
+    fit_epochs,
+    fit_shuffle,
+    fit_validation_split,
+    fit_verbose,
+    max_fpr,
+    lossplot_path: comp.OutputPath(str),
+    models_dir: comp.OutputPath(),
+) -> typing.NamedTuple(
+    "loss_plot", [("mlpipeline_ui_metadata", "UI_metadata")]  # noqa: F821
+):
     import base64
-    import matplotlib.pyplot as plt
-    import json
-    from collections import namedtuple
-    import sys
-    import os
     import glob
-    import numpy
+    import json
+    import os
+    import sys
+
+    from collections import namedtuple
+
     import librosa
     import librosa.core
     import librosa.feature
+    import matplotlib.pyplot as plt
+    import numpy
 
     # Parse arguments from pipeline
     feature_frames = int(feature_frames)
@@ -37,11 +56,13 @@ def train(dataset_path: comp.InputPath(str), feature_frames,
                     load base directory list of data
         """
         print("load_directory <- data")
-        dir_path = os.path.abspath(dataset_path + "{base}/*".format(base='/data'))
+        dir_path = os.path.abspath(dataset_path + "{base}/*".format(base="/data"))
         dirs = sorted(glob.glob(dir_path))
         return dirs
 
-    def file_to_vector_array(file_name, n_mels=64, frames=5, n_fft=1024, hop_length=512, power=2.0):
+    def file_to_vector_array(
+        file_name, n_mels=64, frames=5, n_fft=1024, hop_length=512, power=2.0
+    ):
         """
         convert file_name to a vector array.
 
@@ -54,14 +75,20 @@ def train(dataset_path: comp.InputPath(str), feature_frames,
         """
         dims = n_mels * frames
         y, sr = file_load(file_name)
-        mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels, power=power)
-        log_mel_spectrogram = 20.0 / power * numpy.log10(mel_spectrogram + sys.float_info.epsilon)
+        mel_spectrogram = librosa.feature.melspectrogram(
+            y=y, sr=sr, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels, power=power
+        )
+        log_mel_spectrogram = (
+            20.0 / power * numpy.log10(mel_spectrogram + sys.float_info.epsilon)
+        )
         vector_array_size = len(log_mel_spectrogram[0, :]) - frames + 1
         if vector_array_size < 1:
             return numpy.empty((0, dims))
         vector_array = numpy.zeros((vector_array_size, dims))
         for t in range(frames):
-            vector_array[:, n_mels * t: n_mels * (t + 1)] = log_mel_spectrogram[:, t: t + vector_array_size].T
+            vector_array[:, n_mels * t : n_mels * (t + 1)] = log_mel_spectrogram[
+                :, t : t + vector_array_size
+            ].T
         return vector_array
 
     def file_load(wav_name, mono=False):
@@ -95,7 +122,11 @@ def train(dataset_path: comp.InputPath(str), feature_frames,
         """
 
         print("target_dir : {}".format(target_dir))
-        training_list_path = os.path.abspath("{dir}/{dir_name}/*.{ext}".format(dir=target_dir, dir_name=dir_name, ext=ext))
+        training_list_path = os.path.abspath(
+            "{dir}/{dir_name}/*.{ext}".format(
+                dir=target_dir, dir_name=dir_name, ext=ext
+            )
+        )
         files = sorted(glob.glob(training_list_path))
         if len(files) == 0:
             print("Exception: no_wav_file!!")
@@ -103,7 +134,15 @@ def train(dataset_path: comp.InputPath(str), feature_frames,
         print("train_file num : {num}".format(num=len(files)))
         return files
 
-    def list_to_vector_array(file_list, msg="calc...", n_mels=64, frames=5, n_fft=1024, hop_length=512, power=2.0):
+    def list_to_vector_array(
+        file_list,
+        msg="calc...",
+        n_mels=64,
+        frames=5,
+        n_fft=1024,
+        hop_length=512,
+        power=2.0,
+    ):
         """
         convert the file_list to a vector array.
         file_to_vector_array() is iterated, and the output vector array is concatenated.
@@ -118,15 +157,30 @@ def train(dataset_path: comp.InputPath(str), feature_frames,
         """
         dims = n_mels * frames
         for idx in range(len(file_list)):
-            vector_array = file_to_vector_array(file_list[idx], n_mels=n_mels, frames=frames, n_fft=n_fft, hop_length=hop_length, power=power)
+            vector_array = file_to_vector_array(
+                file_list[idx],
+                n_mels=n_mels,
+                frames=frames,
+                n_fft=n_fft,
+                hop_length=hop_length,
+                power=power,
+            )
             if idx == 0:
-                dataset = numpy.zeros((vector_array.shape[0] * len(file_list), dims), float)
-            dataset[vector_array.shape[0] * idx: vector_array.shape[0] * (idx + 1), :] = vector_array
+                dataset = numpy.zeros(
+                    (vector_array.shape[0] * len(file_list), dims), float
+                )
+            dataset[
+                vector_array.shape[0] * idx : vector_array.shape[0] * (idx + 1), :
+            ] = vector_array
         return dataset
 
     def get_model(inputDim):
+        from tensorflow.keras.layers import Activation
+        from tensorflow.keras.layers import BatchNormalization
+        from tensorflow.keras.layers import Dense
+        from tensorflow.keras.layers import Input
         from tensorflow.keras.models import Model
-        from tensorflow.keras.layers import Input, Dense, BatchNormalization, Activation
+
         """
         define the keras model
         the model based on the simple dense auto encoder
@@ -136,39 +190,39 @@ def train(dataset_path: comp.InputPath(str), feature_frames,
 
         h = Dense(128)(inputLayer)
         h = BatchNormalization()(h)
-        h = Activation('relu')(h)
+        h = Activation("relu")(h)
 
         h = Dense(128)(h)
         h = BatchNormalization()(h)
-        h = Activation('relu')(h)
+        h = Activation("relu")(h)
 
         h = Dense(128)(h)
         h = BatchNormalization()(h)
-        h = Activation('relu')(h)
+        h = Activation("relu")(h)
 
         h = Dense(128)(h)
         h = BatchNormalization()(h)
-        h = Activation('relu')(h)
+        h = Activation("relu")(h)
 
         h = Dense(8)(h)
         h = BatchNormalization()(h)
-        h = Activation('relu')(h)
+        h = Activation("relu")(h)
 
         h = Dense(128)(h)
         h = BatchNormalization()(h)
-        h = Activation('relu')(h)
+        h = Activation("relu")(h)
 
         h = Dense(128)(h)
         h = BatchNormalization()(h)
-        h = Activation('relu')(h)
+        h = Activation("relu")(h)
 
         h = Dense(128)(h)
         h = BatchNormalization()(h)
-        h = Activation('relu')(h)
+        h = Activation("relu")(h)
 
         h = Dense(128)(h)
         h = BatchNormalization()(h)
-        h = Activation('relu')(h)
+        h = Activation("relu")(h)
 
         h = Dense(inputDim)(h)
 
@@ -202,12 +256,12 @@ def train(dataset_path: comp.InputPath(str), feature_frames,
         return: JSON object representing kubeflow output viewer for web-app.
         """
         # Retrieve encoded bytes of the specified image path
-        encoded = base64.b64encode(open(plot_path, "rb").read()).decode('latin1')
+        encoded = base64.b64encode(open(plot_path, "rb").read()).decode("latin1")
 
         web_app_json = {
-            'type': 'web-app',
-            'storage': 'inline',
-            'source': f"""<img width="100%" src="data:image/png;base64,{encoded}"/>"""
+            "type": "web-app",
+            "storage": "inline",
+            "source": f"""<img width="100%" src="data:image/png;base64,{encoded}"/>""",
         }
         return web_app_json
 
@@ -216,35 +270,48 @@ def train(dataset_path: comp.InputPath(str), feature_frames,
     # loop of the base directory
     for idx, target_dir in enumerate(dirs):
         print("\n===========================")
-        print("[{idx}/{total}] {dirname}".format(dirname=target_dir, idx=idx + 1, total=len(dirs)))
+        print(
+            "[{idx}/{total}] {dirname}".format(
+                dirname=target_dir, idx=idx + 1, total=len(dirs)
+            )
+        )
         machine_type = os.path.split(target_dir)[1]
-        model_file_path = "{model}/model_{machine_type}.hdf5".format(model=models_dir + '/model', machine_type=machine_type)
-        if not os.path.exists(models_dir + '/model'):
-            os.makedirs(models_dir + '/model')
+        model_file_path = "{model}/model_{machine_type}.hdf5".format(
+            model=models_dir + "/model", machine_type=machine_type
+        )
+        if not os.path.exists(models_dir + "/model"):
+            os.makedirs(models_dir + "/model")
 
         # generate dataset
         print("============== DATASET_GENERATOR ==============")
         files = file_list_generator(target_dir)
-        train_data = list_to_vector_array(files,
-                                          msg="generate train_dataset",
-                                          n_mels=feature_n_mels,
-                                          frames=feature_frames,
-                                          n_fft=feature_n_fft,
-                                          hop_length=feature_hop_length,
-                                          power=feature_power)
+        train_data = list_to_vector_array(
+            files,
+            msg="generate train_dataset",
+            n_mels=feature_n_mels,
+            frames=feature_frames,
+            n_fft=feature_n_fft,
+            hop_length=feature_hop_length,
+            power=feature_power,
+        )
         print(train_data)
         # train model
         print("============== MODEL TRAINING ==============")
         model = get_model(feature_n_mels * feature_frames)
         model.summary()
-        model.compile(optimizer=fit_compile_optimizer, loss=fit_compile_loss,)
-        history = model.fit(train_data,
-                            train_data,
-                            epochs=fit_epochs,
-                            batch_size=fit_batch_size,
-                            shuffle=fit_shuffle,
-                            validation_split=fit_validation_split,
-                            verbose=fit_verbose)
+        model.compile(
+            optimizer=fit_compile_optimizer,
+            loss=fit_compile_loss,
+        )
+        history = model.fit(
+            train_data,
+            train_data,
+            epochs=fit_epochs,
+            batch_size=fit_batch_size,
+            shuffle=fit_shuffle,
+            validation_split=fit_validation_split,
+            verbose=fit_verbose,
+        )
 
         model.save(model_file_path)
 
@@ -253,8 +320,6 @@ def train(dataset_path: comp.InputPath(str), feature_frames,
 
     print("============== END TRAINING ==============")
 
-    metadata = {
-        'outputs' : loss_plot
-    }
-    loss_plot = namedtuple('loss_plot', ['mlpipeline_ui_metadata'])
+    metadata = {"outputs": loss_plot}
+    loss_plot = namedtuple("loss_plot", ["mlpipeline_ui_metadata"])
     return loss_plot(json.dumps(metadata))
