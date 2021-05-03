@@ -10,7 +10,12 @@ kfp = "1.4.0"
 matplotlib = "3.4.1"
 scipy = "1.6.3"
 scikit-learn = "0.24.2"
-librosa = "0.8.0"
+librosa = "0.6.0"
+keras = "2.1.6"
+Keras-Applications = "1.0.8"
+Keras-Preprocessing = "1.1.0"
+numba = "0.48"
+audioread = "2.1.5"
 
 
 [tool.poetry.dev-dependencies]
