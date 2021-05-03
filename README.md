@@ -160,3 +160,17 @@ If we increase the number of epochs to 150, and the validation split to 0.15, th
 |4	|	87.260% |   64.158%	|
 |6	|	72.716% |   58.153% |
 
+## Troubleshooting
+
+### M1 Mac Install
+
+This currently does not work because of `librosa`, which depends on llvmlite and [does not have aarch support](https://github.com/numba/llvmlite/issues/665).
+
+As of scipy `1.6.3` you'll need to add some workarounds to get it to build.
+
+```
+brew install openblas
+export OPENBLAS=$(brew --prefix openblas)
+export CFLAGS="-falign-functions=8 ${CFLAGS}"
+poetry install
+```
