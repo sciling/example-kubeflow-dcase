@@ -13,9 +13,10 @@ scikit-learn = "0.24.2"
 librosa = "0.6.0"
 keras = "2.1.6"
 Keras-Applications = "1.0.8"
-Keras-Preprocessing = "1.1.0"
 numba = "0.48"
 audioread = "2.1.5"
+Keras-Preprocessing = "1.1.2"
+tensorflow = "^2.4.1"
 
 
 [tool.poetry.dev-dependencies]
@@ -72,3 +73,6 @@ exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING:"
 ]
+
+[tool.poetry.scripts]
+test = 'scripts:test'
