@@ -1,9 +1,41 @@
-# Anomalous sound detection (ASD) with Kubeflow Pipeline #
+# SAME Example: Anomalous sound detection (ASD) with Kubeflow Pipeline
+
+[![Code Quality](https://github.com/SAME-Project/example-kubeflow-dcase/actions/workflows/quality.yml/badge.svg)](https://github.com/SAME-Project/example-kubeflow-dcase/actions/workflows/quality.yaml) [![Tests](https://github.com/SAME-Project/example-kubeflow-dcase/actions/workflows/test.yml/badge.svg)](https://github.com/SAME-Project/example-kubeflow-dcase/actions/workflows/test.yml) [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
+
+**TL;DR;** Reproducible condition monitoring project using Kubeflow and SAME, in a single command
+
+- [Installing / Getting Started](#installing--getting-started)
+  * [Pipeline Parameters](#pipeline-parameters)
+  * [Pipeline Stages](#pipeline-stages)
+- [Experimental Results](#experimental-results)
+  * [Input parameters](#input-parameters)
+  * [Loss plot](#loss-plot)
+  * [ROC Curve](#roc-curve)
+  * [Metrics](#metrics)
+- [Developing](#developing)
+  * [Testing](#testing)
+- [Known Issues](#known-issues)
+  * [M1 Mac Install](#m1-mac-install)
+- [Contributing](#contributing)
+- [Credits](#credits)
+
 Anomalous sound detection (ASD) is the task of identifying whether the sound emitted from a machine is normal or anomalous. Automatic detection of mechanical failure is essential technology in the fourth industrial revolution, including artificial intelligence (AI)-based factory automation. Prompt detection of machine anomalies by observing sounds is useful for machine condition monitoring.
 
-In this repository, we try to adapt the code provided by the github project [dcase2020_task2_baseline](https://github.com/y-kawagu/dcase2020_task2_baseline) under the [MIT License](https://github.com/y-kawagu/dcase2020_task2_baseline/blob/master/LICENSE) whose main goals are "Unsupervised Detection of Anomalous Sounds for Machine Condition Monitoring". Our aim will be to convert this code into a kubeflow pipeline.
+## Installing / Getting Started
 
-# Pipeline parameters #
+Create a working SAME installation by [following instructions found in the wiki](https://github.com/azure-octo/same-cli/wiki/Epic-Sprint-1-Demo), but stop before the "Run a program" section. Then run the following commands:
+
+```bash
+git clone https://github.com/SAME-Project/example-kubeflow-dcase
+cd example-kubeflow-dcase
+same program create -f same.yaml
+same program run -f same.yaml --experiment-name example-kubeflow-dcase --run-name default
+```
+
+Now browse to your kubeflow installation and you should be able to see an experiment and a run.
+
+### Pipeline Parameters
+
 | Pipeline parameter | Description |
 | ------ | ------ |
 |dataset_url | url of the dataset (e.g https://zenodo.org/record/3678171/files/dev_data_fan.zip)|
@@ -51,14 +83,14 @@ Some options for the dataset url are:
 * Valve dataset: https://zenodo.org/record/3678171/files/dev_data_valve.zip
 * Pump dataset: https://zenodo.org/record/3678171/files/dev_data_pump.zip
 
-# Pipeline stages #
+### Pipeline Stages
 
 ![pipeline.png](./data/images/pipeline.png)
 
-##### 1. Download dataset ([code](./src/download.py))
+#### 1. Download dataset ([code](./src/download.py))
 This component, given the dataset url, downloads all its contents inside an OutputPath Artifact.
 
-##### 2. Train ([code](./src/train.py))
+#### 2. Train ([code](./src/train.py))
 This component performs the following operations:
 
     1. Given an InputPath containing the previously downloaded dataset, extracts all the training files (audio), converting them into numeric arrays.
@@ -66,7 +98,7 @@ This component performs the following operations:
     3. Save the model in an OutputPath Artifact.
     4. Generate a loss plot, saves it in an OutputArtifact and embed its visualization inside a web-app component.
 
-##### 3. Test ([code](./src/test.py))
+#### 3. Test ([code](./src/test.py))
 This component performs the following operations:
 
     1. Loads the previously saved model through an InputPath Artifact.
@@ -78,26 +110,13 @@ This component performs the following operations:
     7. Saves the scores for the anomalies files of the test into a anomaly_dir OutputPath Artifact.
     6. Saves accuracy as metrics that will later be passed to the Metrics component.
 
-##### 4.1. ROC Curve ([code](./src/roc_curve.py))
+#### 4.1. ROC Curve ([code](./src/roc_curve.py))
 This component is passed the labels directory, which contains true labels and predicted scores, and generates a roc curve that the kubeflow UI can understand. This function can be reused in other pipelines if given the appropiate parameters.
 
-##### 4.2. Metrics ([code](./src/metrics.py))
+#### 4.2. Metrics ([code](./src/metrics.py))
 This component is passed the mlpipelinemetrics which contains metrics and generates a visualization of them that the kubeflow UI can understand.
 
-
-# File generation #
-To generate the pipeline from the python file, execute the following command:
-
-```python3 pipeline.py```
-
-pipeline.py is located inside src folder. The pipeline will be created at the same directory that the command is executed.
-
-Also, if you want to run all tests locally, execute:
-```python3 -m unittest tests/*_test.py```
-
-Once the pipeline has been created, we can upload the generated zip file in kubeflow UI and create runs of it.
-
-# Experimental results #
+## Experimental Results
 
 In this section we will replicate the results for the pump dataset in the [DCASE 2020 Challenge Task 2 "Unsupervised Detection of Anomalous Sounds for Machine Condition Monitoring"](https://github.com/y-kawagu/dcase2020_task2_baseline/README.md).
 The pipeline outputs are a loss plot, a roc curve, and different metrics, from which metrics can be directly compared.
@@ -160,7 +179,24 @@ If we increase the number of epochs to 150, and the validation split to 0.15, th
 |4	|	87.260% |   64.158%	|
 |6	|	72.716% |   58.153% |
 
-## Troubleshooting
+
+## Developing
+
+When attempting to run or test the code locally you will need to install the reqiured libraries (this requires [poetry](https://python-poetry.org)).
+
+```bash
+make install
+```
+
+### Testing
+
+This repo is not a library, nor is it meant to run with different permutations of Python or library versions. It is not guaranteed to work with different Python or library versions, but it might. There is limited matrix testing in the github action CI/CD.
+
+```bash
+make tests
+```
+
+## Known Issues
 
 ### M1 Mac Install
 
@@ -174,3 +210,13 @@ export OPENBLAS=$(brew --prefix openblas)
 export CFLAGS="-falign-functions=8 ${CFLAGS}"
 poetry install
 ```
+
+## Contributing
+
+See [CONTRUBUTING.md](CONTRIBUTING.md).
+
+## Credits
+
+This project was delivered by [Winder Research](https://WinderResearch.com), an ML/RL/MLOps consultancy.
+
+This repository is inspired by [dcase2020_task2_baseline](https://github.com/y-kawagu/dcase2020_task2_baseline) under the [MIT License](https://github.com/y-kawagu/dcase2020_task2_baseline/blob/master/LICENSE) whose main goals are "Unsupervised Detection of Anomalous Sounds for Machine Condition Monitoring".

@@ -1,11 +1,9 @@
-name: code-quality
-
+name: quality
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-
 jobs:
   pre-commit:
     name: Linting
