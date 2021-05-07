@@ -14,7 +14,11 @@ jobs:
     strategy:
       matrix:
         os: [Ubuntu, MacOS]
-        python-version: [3.8, 3.9]
+        # Some packages don't compile nor have wheels available for 3.9.
+        # In particular, llvmlite works from version 0.36.0,
+        # but that forces you to upgrade numba to 0.53 which is incompatible.
+        # Something similar happens with grpcio
+        python-version: [3.8] #  , 3.9]
       fail-fast: false
     steps:
     #----------------------------------------------
